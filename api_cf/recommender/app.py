@@ -1,4 +1,4 @@
-# recommender_service/app.py
+﻿# recommender_service/app.py
 from flask import Flask, request, jsonify
 import numpy as np
 import pandas as pd
@@ -7,15 +7,20 @@ from fold_in import compute_user_profile, recommend_top_n
 import os
 app = Flask(__name__)
 
+# Model path is configurable for container and local runs.
+MODEL_DATA_DIR = os.getenv("MODEL_DATA_DIR", "../model_data")
+FLASK_HOST = os.getenv("FLASK_HOST", "0.0.0.0")
+FLASK_PORT = int(os.getenv("FLASK_PORT", "5000"))
+
 # Load the model data once when the service starts
-with open("../model_data/item_factors.pkl", "rb") as f:
+with open(os.path.join(MODEL_DATA_DIR, "item_factors.pkl"), "rb") as f:
     model_data = pickle.load(f)
 
 from content_based import content_based_recommender
 # Load content-based model data
-df_themes      = pd.read_pickle("../model_data/themes.pkl")
-df_transform   = pd.read_pickle("../model_data/category_transform.pkl")
-df_games       = pd.read_pickle("../model_data/games.pkl")
+df_themes      = pd.read_pickle(os.path.join(MODEL_DATA_DIR, "themes.pkl"))
+df_transform   = pd.read_pickle(os.path.join(MODEL_DATA_DIR, "category_transform.pkl"))
+df_games       = pd.read_pickle(os.path.join(MODEL_DATA_DIR, "games.pkl"))
 
 # Load model parameters and metadata
 item_factors = model_data["item_factors"]      # shape: (num_items, n_factors)
@@ -26,7 +31,7 @@ item_index_map = model_data["item_index_map"]    # mapping from raw item_id to i
 reg_coeff = model_data["reg_coeff"]              # regularization coefficient
 n_factors = item_factors.shape[1]                # number of latent factors
 
-# Build inverse map once: raw-id -> CF row‑index (robust join key)
+# Build inverse map once: raw-id -> CF row?ndex (robust join key)
 rawid_to_cfidx = {raw_id: idx for idx, raw_id in enumerate(item_ids_list)}
 
 checkbox_cols  = df_transform.columns[1:]          # order expected from UI
@@ -37,23 +42,24 @@ N_ITEMS        = len(item_ids_list)                # sanity check
 # Utility functions
 # ------------------------------------------------------------------
 def normalise(arr: np.ndarray) -> np.ndarray:
-    """Min‑max normalise to 0‑1 (no div‑by‑zero if all identical)."""
+    """Min?ax normalise to 0?? (no div?y?ero if all identical)."""
     amin, amax = arr.min(), arr.max()
     return (arr - amin) / (amax - amin) if amax > amin else np.zeros_like(arr)
 
 def dynamic_alpha(num_ratings: int,
-                  low: float = 0.3,
                   high: float = 0.8,
-                  pivot: int = 10) -> float:
+                  pivot: int = 8) -> float:
     """
-    Less data -> rely more on CB; more data -> rely on CF.
-    • ≤0 ratings  → α = low
-    • ≥pivot      → α = high
-    • linear in‑between
+    CF weight policy aligned with the presentation:
+    - N = 0  -> 0.0
+    - N >= 8 -> 0.8
+    - otherwise linear: alpha = (N / 8) * 0.8
     """
+    if num_ratings <= 0:
+        return 0.0
     if num_ratings >= pivot:
         return high
-    return low + (high - low) * (num_ratings / pivot)
+    return (num_ratings / pivot) * high
 
 # ------------------------------------------------------------------
 # Flask service
@@ -113,7 +119,7 @@ def recommend():
         if idx is not None:
             hybrid[idx] = -np.inf
 
-    # ----------- 4.  Top‑N -----------
+    # ----------- 4.  Top? -----------
     N = int(data.get("top_n", 20))
     top_idx = np.argpartition(hybrid, -N)[-N:]
     top_idx = top_idx[np.argsort(hybrid[top_idx])[::-1]]
@@ -132,4 +138,5 @@ def recommend():
     return jsonify(response)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host=FLASK_HOST, port=FLASK_PORT, debug=True)
+
