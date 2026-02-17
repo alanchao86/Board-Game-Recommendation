@@ -23,39 +23,41 @@ def content_based_recommender(user_input, top_n=20):
   df_themes.drop(columns=drop_cols, inplace=True)
 
 
-  # transform the user input into user perference
+  # transform the user input into user preference
   def category_transform(user_input):
     columns_list = df_transform.columns.tolist()
     columns_list = columns_list[1:]
-    user_perference = np.array([0] * 107)
+    user_preference = np.array([0] * 107)
     for i in range(len(user_input)):
       if user_input[i] == True:
         temp = np.array(df_transform[columns_list[i]].tolist())
-        user_perference = user_perference + temp
+        user_preference = user_preference + temp
 
-    return user_perference.tolist()
+    return user_preference.tolist()
 
   # data preprocessing
   df_themes_data = df_themes.iloc[:,1:]
-  user_perference = category_transform(user_input)
+  user_preference = category_transform(user_input)
   avg_ratings = df_games.loc[:,"AvgRating"].to_list()
 
 
 
-  # normalize the user_perference
-  normalized_perference = [x/sum(user_perference) for x in user_perference]
-  df_normalized = pd.DataFrame([normalized_perference])
-
-  # calculate the similarity scores
-  sim_scores = cosine_similarity(df_normalized, df_themes_data).tolist()[0]
+  # normalize the user preference.
+  # If all preferences are false, fallback to average-rating based scores.
+  # This avoids divide-by-zero and keeps ranking meaningful.
+  pref_sum = float(np.sum(user_preference))
+  if pref_sum <= 0:
+    sim_scores = avg_ratings
+  else:
+    normalized_preference = [x / pref_sum for x in user_preference]
+    df_normalized = pd.DataFrame([normalized_preference])
+    # calculate the similarity scores
+    sim_scores = cosine_similarity(df_normalized, df_themes_data).tolist()[0]
 
   # append average ratings as tie-breaker
   sim_avg = [[sim_scores[i], avg_ratings[i]] for i in range(len(sim_scores))]
 
   # sorting
   sorted_sim_avg = sorted(enumerate(sim_avg), key=lambda i: i[1], reverse=True)
-
-  # top n of games based on user perference
-  ranked_games_ID = [x[0]+1 for x in sorted_sim_avg]
 
   return sorted_sim_avg[:top_n]

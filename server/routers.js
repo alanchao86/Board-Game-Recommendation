@@ -1,14 +1,15 @@
-const express = require('.pnpm/express@4.19.2/node_modules/express');
+const express = require('express');
 const pool = require('./db');
 const router = express.Router();
 const JWT_SECRET = 'cutecat';
-const jwt = require('.pnpm/jsonwebtoken@9.0.2/node_modules/jsonwebtoken');
-const bcrypt = require('.pnpm/bcrypt@5.1.1/node_modules/bcrypt');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const saltRounds = 10;
-const multer = require('.pnpm/multer@1.4.5-lts.1/node_modules/multer');
+const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const axios = require('axios');
+const RECOMMENDER_URL = process.env.RECOMMENDER_URL || 'http://recommender:5000';
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -177,7 +178,7 @@ router.get('/getGameId', async (req, res) => {
         const booleanPreferences = results2.rows[0]['preference_list1'];
         // console.log(booleanPreferences);
         // Send data to Flask microservice
-        const flaskResponse = await axios.post('http://127.0.0.1:5000/recommend', {
+        const flaskResponse = await axios.post(`${RECOMMENDER_URL}/recommend`, {
             username: userId,
             ratings: rating_pair,
             preferences: booleanPreferences
@@ -215,7 +216,7 @@ router.post('/setGamePreference', async (req, res) => {
     const booleanPreferences = Object.values(preferences);
     try {
         // Send data to Flask microservice
-        const flaskResponse = await axios.post('http://127.0.0.1:5000/recommend', {
+        const flaskResponse = await axios.post(`${RECOMMENDER_URL}/recommend`, {
             username: userId,
             ratings: [],
             preferences: booleanPreferences
