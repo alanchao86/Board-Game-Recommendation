@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Copy the dependencies file and install Python dependencies
 COPY dependencies.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r dependencies.txt
 
 # Copy all project files into the container
 COPY . .
