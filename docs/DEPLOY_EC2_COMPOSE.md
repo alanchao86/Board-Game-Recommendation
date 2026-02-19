@@ -108,6 +108,7 @@ Use Caddy on host (Let's Encrypt auto-managed):
    - `docker compose -f docker-compose.prod.yml --env-file .env.prod restart`
 2. Update after code changes:
    - `git pull`
+   - `docker compose -f docker-compose.prod.yml --env-file .env.prod run --rm migrate`
    - `docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build`
 3. Stop:
    - `docker compose -f docker-compose.prod.yml --env-file .env.prod down`
