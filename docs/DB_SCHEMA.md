@@ -20,7 +20,7 @@ Purpose:
 
 Columns:
 - `id` (INTEGER, PK, auto-increment)
-- `email` (VARCHAR(30))
+- `email` (VARCHAR(255), NOT NULL)
 - `password` (VARCHAR(255), NOT NULL)
 - `firstname` (VARCHAR(30))
 - `lastname` (VARCHAR(30))
@@ -29,6 +29,10 @@ Columns:
 - `preference` (BOOLEAN, NOT NULL, default `false`)
 - `preference_list` (INTEGER[], NOT NULL, default `[]`)
 - `preference_list1` (BOOLEAN[], NOT NULL, default `[]`)
+
+Constraints / Indexes:
+- UNIQUE `username`
+- UNIQUE index `users_email_lower_unique` on `LOWER(email)` (case-insensitive email uniqueness)
 
 Referenced by:
 - `chats.user1_id -> users.id`
@@ -165,6 +169,7 @@ Seed mapping (`games.pkl` -> `board_games`):
 - `server/migrations/20260216234000-add-recommendation-columns-to-users.js`
 - `server/migrations/20260216234100-create-board-games.js`
 - `server/migrations/20260216234200-create-user-ratings.js`
+- `server/migrations/20260219161000-enforce-unique-user-email.js`
 
 ---
 

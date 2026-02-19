@@ -6,6 +6,7 @@ This is a board game recommend application built using the PERN stack (PostgreSQ
 ## Features
 
 - **User Authentication**: Sign up and sign in using JWT-based authentication.
+- **Auth Data Guardrails**: Email is normalized case-insensitively and enforced unique to prevent duplicate-account login ambiguity.
 - **Game Recommend**: Recommend games.
 - **Game Search**: Search for games.
 - **Profile Modification**: Modify your own profile.

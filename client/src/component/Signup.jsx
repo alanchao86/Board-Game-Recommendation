@@ -11,6 +11,7 @@ import Container from '@mui/material/Container';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { Link as RouterLink } from "react-router-dom";
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { signup } from './Api.jsx';
 function Copyright(props) {
   return (
@@ -29,8 +30,11 @@ const defaultTheme = createTheme();
 
 export default function SignUp() {
   const navigate = useNavigate();
+  const [errorMessage, setErrorMessage] = useState('');
+
   const handleSubmit = async (event) => {
     event.preventDefault();
+    setErrorMessage('');
     const formData = new FormData(event.currentTarget);
     const data = {
       firstname: formData.get('firstName'),
@@ -41,15 +45,16 @@ export default function SignUp() {
     };
     try {
       const result = await signup(data);
-      if (result) {
+      if (result?.ok) {
         console.log('sign up successfully');
         navigate('/');
       } else {
-        console.log('sign up failed');
+        setErrorMessage(result?.message || 'Sign up failed');
       }
     }
     catch (error) {
       console.error('Error:', error);
+      setErrorMessage('An error occurred. Please try again.');
     }
   };
 
@@ -134,6 +139,11 @@ export default function SignUp() {
             >
               Sign Up
             </Button>
+            {errorMessage && (
+              <Typography color="error" variant="body2" sx={{ mb: 1 }}>
+                {errorMessage}
+              </Typography>
+            )}
             <Grid container justifyContent="flex-end">
               <Grid item>
                 <Link component={RouterLink} to='/' variant="body2">

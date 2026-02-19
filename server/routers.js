@@ -292,8 +292,18 @@ router.get('/verify', verifyToken, (req, res) => {
 
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
+    const normalizedEmail = email?.trim().toLowerCase();
+
+    if (!normalizedEmail || !password) {
+        return res.status(400).json({ message: 'Email and password are required' });
+    }
+
     try {
-        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        // Order by newest id to avoid ambiguous results if legacy duplicate emails exist.
+        const result = await pool.query(
+            'SELECT * FROM users WHERE LOWER(email) = LOWER($1) ORDER BY id DESC LIMIT 1',
+            [normalizedEmail]
+        );
         if (result.rows.length == 0) {
             console.log("User not found")
             return res.status(404).json({ message: 'User not found' });
@@ -303,7 +313,7 @@ router.post('/login', async (req, res) => {
         // const isMatch = password === user.password;
         if (!isMatch) {
             console.log("Incorrect password");
-            return res.status(404).json({ message: 'Incorrrect password' });
+            return res.status(401).json({ message: 'Incorrect password' });
         }
         console.log("authenticate successfully");
         const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: '1h' });
@@ -315,11 +325,26 @@ router.post('/login', async (req, res) => {
 
 router.post('/signup', async (req, res) => {
     const { firstname, lastname, email, password, username } = req.body;
-    console.log(req.body);
+    const normalizedEmail = email?.trim().toLowerCase();
+    const normalizedUsername = username?.trim();
+
+    if (!firstname || !lastname || !normalizedEmail || !password || !normalizedUsername) {
+        return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    console.log({ firstname, lastname, email: normalizedEmail, username: normalizedUsername });
     const encrypted = await bcrypt.hash(password, saltRounds);
     try {
+        const existingUser = await pool.query(
+            'SELECT id FROM users WHERE LOWER(email) = LOWER($1) LIMIT 1',
+            [normalizedEmail]
+        );
+        if (existingUser.rows.length > 0) {
+            return res.status(409).json({ message: 'Email already registered' });
+        }
+
         const results = await pool.query('INSERT INTO users (firstname, lastname, email, password, username) VALUES ($1, $2, $3, $4, $5) RETURNING id',
-            [firstname, lastname, email, encrypted, username]);
+            [firstname, lastname, normalizedEmail, encrypted, normalizedUsername]);
         console.log(results);
         res.status(201).json({ message: 'User added', userId: results.rows[0].id });
     } catch (error) {
