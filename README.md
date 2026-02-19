@@ -19,6 +19,53 @@ This is a board game recommend application built using the PERN stack (PostgreSQ
 - **Database**: PostgreSQL
 - **Authentication**: JSON Web Tokens (JWT)
 
+## Architecture Diagram
+
+For the full architecture set, see `docs/ARCHITECTURE.md`.
+
+### System Overview (Container View)
+
+```mermaid
+flowchart LR
+    U[User Browser]
+
+    subgraph APP[Board Game Recommendation Platform]
+      C[Client\nReact + Vite]
+      S[Server API\nNode.js + Express]
+      R[Recommender\nFlask Hybrid CF+CB]
+      DB[(PostgreSQL)]
+      MIG[Migrate Job]
+      SEED[Seed Job]
+    end
+
+    U -->|UI| C
+    C -->|REST API| S
+    S -->|read/write| DB
+    S -->|POST /recommend| R
+    MIG -->|db:migrate| DB
+    SEED -->|upsert board_games| DB
+```
+
+### Recommendation Request Flow
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Client as Client (React)
+    participant API as Server (Express)
+    participant DB as PostgreSQL
+    participant Rec as Recommender (Flask)
+
+    User->>Client: Set preferences / submit ratings
+    Client->>API: POST /setGamePreference or GET /getGameId
+    API->>DB: Read preferences + user_ratings
+    API->>Rec: POST /recommend {ratings, preferences}
+    Rec->>Rec: Compute CF + CB + dynamic alpha
+    Rec-->>API: recommended bggid list
+    API->>DB: SELECT board_games by bggid
+    API-->>Client: game IDs / game metadata
+```
+
 ## Database Schema
 
 - Schema design document: `docs/DB_SCHEMA.md`
