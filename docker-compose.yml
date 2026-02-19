@@ -3,9 +3,9 @@ services:
     image: postgres:16-alpine
     container_name: bgr_postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: recommend
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-recommend}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -20,14 +20,16 @@ services:
       dockerfile: Dockerfile
     container_name: bgr_server
     environment:
-      PORT: 5001
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      DB_NAME: recommend
-      DB_HOST: postgres
-      DB_PORT: 5432
-      GITHUB_CLIENT_URL: http://localhost:3000
-      RECOMMENDER_URL: http://recommender:5000
+      PORT: ${PORT:-5001}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${DB_NAME:-recommend}
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      GITHUB_CLIENT_URL: ${GITHUB_CLIENT_URL:-http://localhost:3000}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      JWT_SECRET: ${JWT_SECRET:-dev-only-secret-change-me}
+      RECOMMENDER_URL: ${RECOMMENDER_URL:-http://recommender:5000}
     command: ["pnpm", "start"]
     ports:
       - "5001:5001"
@@ -72,11 +74,11 @@ services:
       dockerfile: Dockerfile
     container_name: bgr_migrate
     environment:
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      DB_NAME: recommend
-      DB_HOST: postgres
-      DB_PORT: 5432
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${DB_NAME:-recommend}
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
       NODE_ENV: development
     command: ["pnpm", "migrate"]
     depends_on:
@@ -90,13 +92,13 @@ services:
     container_name: bgr_seed_board_games
     working_dir: /app/recommender
     environment:
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      DB_NAME: recommend
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${DB_NAME:-recommend}
       GAMES_PKL_PATH: /app/model_data/games.pkl
-      SEED_BATCH_SIZE: 2000
+      SEED_BATCH_SIZE: ${SEED_BATCH_SIZE:-2000}
       SEED_FORCE: ${SEED_FORCE:-0}
     command: ["python", "seed_board_games.py"]
     depends_on:
@@ -111,7 +113,7 @@ services:
       dockerfile: Dockerfile
     container_name: bgr_client
     environment:
-      VITE_API_URL: http://localhost:5001
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:5001}
     command: ["pnpm", "dev", "--host", "0.0.0.0", "--port", "3000"]
     ports:
       - "3000:3000"
@@ -131,7 +133,7 @@ services:
     container_name: bgr_pgadmin
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@example.com}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin1234}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin-change-me}
     ports:
       - "5050:80"
     volumes:

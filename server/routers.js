@@ -1,7 +1,10 @@
 const express = require('express');
 const pool = require('./db');
 const router = express.Router();
-const JWT_SECRET = 'cutecat';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET must be set.');
+}
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const saltRounds = 10;
