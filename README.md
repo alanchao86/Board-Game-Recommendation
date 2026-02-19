@@ -1,16 +1,20 @@
-# Board Recommendation App
+# Board Game Recommendation App
 
-This is a board game recommend application built using the PERN stack (PostgreSQL, Express.js, React.js, Node.js) and Material-UI (MUI). The application includes user authentication via JWT, recommend board games based on user preference and game rating using content-based filtering and collaborative-based filtering, and user profile management.
+Live Demo: https://3.14.178.12.sslip.io/
+Note: the demo instance may be temporarily offline when EC2 is stopped for cost control.
+
+This project is a board game recommendation web application built with the PERN stack (PostgreSQL, Express.js, React.js, Node.js) and Material-UI (MUI). It includes JWT-based authentication, hybrid recommendations (content-based + collaborative filtering), and user profile management.
 
 
 ## Features
 
-- **User Authentication**: Sign up and sign in using JWT-based authentication.
-- **Auth Data Guardrails**: Email is normalized case-insensitively and enforced unique to prevent duplicate-account login ambiguity.
-- **Game Recommend**: Recommend games.
-- **Game Search**: Search for games.
-- **Profile Modification**: Modify your own profile.
-- **Sign Out**: Sign out from the application.
+- **Hybrid Recommendation Engine**: Blends collaborative filtering and content-based signals into a single ranking score.
+- **Adaptive Blending Strategy**: Dynamically adjusts CF weight (`alpha`) by rating count to handle cold-start users and experienced users differently.
+- **Online Fold-In Personalization**: Computes a temporary user profile from latest ratings without retraining the full model.
+- **Preference + Behavior Signals**: Combines explicit checkbox preferences with implicit rating behavior for personalized recommendations.
+- **Authentication and Session Flow**: Sign up/sign in with JWT-based authentication.
+- **Auth Data Guardrails**: Case-insensitive unique email enforcement to prevent duplicate-account ambiguity.
+- **Game Search and Profile Management**: Search board games and manage user profile information.
 
 ## Technologies Used
 
@@ -128,19 +132,12 @@ After logging into pgAdmin, add a new server with:
 - Production compose file: `docker-compose.prod.yml`
 - Frontend production image: `client/Dockerfile.prod` (Vite build + Nginx)
 - Detailed step-by-step runbook: `docs/DEPLOY_EC2_COMPOSE.md`
+- Live demo endpoint (current): `https://3.14.178.12.sslip.io/`
 - Current production routing pattern:
   - Before HTTPS proxy: `http://<EC2_PUBLIC_IP>:3000/` -> frontend
   - With Caddy + HTTPS: `https://<DOMAIN>/` -> frontend
   - API path: `https://<DOMAIN>/api/*` -> backend API (proxied by client Nginx)
 
-## Cost Notes for EC2
-
-- Stopping an EC2 instance stops compute charges for that instance.
-- You still pay for persisted resources while stopped:
-  - EBS volumes
-  - Elastic IP (when not attached/running association conditions)
-  - Snapshots and other storage resources
-- If you do not need testing, stopping the instance is still the right default for cost control.
 <!-- ## Usage
 
 1. **Sign Up**: Create a new account.
