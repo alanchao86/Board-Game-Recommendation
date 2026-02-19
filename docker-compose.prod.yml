@@ -1,0 +1,129 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: bgr_postgres_prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  migrate:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: bgr_migrate_prod
+    restart: "no"
+    env_file:
+      - .env.prod
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      NODE_ENV: production
+    command: ["pnpm", "migrate"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  seed_board_games:
+    build:
+      context: ./api_cf
+      dockerfile: recommender/Dockerfile
+    container_name: bgr_seed_board_games_prod
+    restart: "no"
+    working_dir: /app/recommender
+    env_file:
+      - .env.prod
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      GAMES_PKL_PATH: /app/model_data/games.pkl
+      SEED_BATCH_SIZE: ${SEED_BATCH_SIZE:-2000}
+      SEED_FORCE: ${SEED_FORCE:-0}
+    command: ["python", "seed_board_games.py"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  recommender:
+    build:
+      context: ./api_cf
+      dockerfile: recommender/Dockerfile
+    container_name: bgr_recommender_prod
+    restart: unless-stopped
+    command: ["python", "app.py"]
+    working_dir: /app/recommender
+    environment:
+      MODEL_DATA_DIR: /app/model_data
+      FLASK_HOST: 0.0.0.0
+      FLASK_PORT: 5000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket,sys;s=socket.socket();s.settimeout(3);s.connect(('127.0.0.1',5000));s.close();sys.exit(0)"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: bgr_server_prod
+    restart: unless-stopped
+    env_file:
+      - .env.prod
+    environment:
+      PORT: ${PORT:-5001}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      RECOMMENDER_URL: http://recommender:5000
+      NODE_ENV: production
+    command: ["pnpm", "run", "start:prod"]
+    volumes:
+      - avatars_data:/app/Avatars
+    ports:
+      - "5001:5001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      seed_board_games:
+        condition: service_completed_successfully
+      recommender:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "const net=require('net');const s=net.connect(5001,'127.0.0.1');s.on('connect',()=>{s.end();process.exit(0)});s.on('error',()=>process.exit(1));setTimeout(()=>process.exit(1),3000);"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile.prod
+      args:
+        VITE_API_URL: ${VITE_API_URL}
+        VITE_BASE_PATH: ${VITE_BASE_PATH:-/}
+    container_name: bgr_client_prod
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      server:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  avatars_data:

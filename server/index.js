@@ -1,5 +1,4 @@
 const express = require('express');
-const bodyParser = require('body-parser');
 const app = express();
 const port = process.env.PORT || 5001;
 const routes = require('./routers');
@@ -9,14 +8,18 @@ const Server = require("socket.io");
 const http = require('http');
 const server = http.createServer(app);
 
-const users = {}; 
+const users = {};
+const corsOrigins = (process.env.CORS_ORIGINS || process.env.GITHUB_CLIENT_URL || 'http://localhost:3000')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 app.use(cors({
-  origin: [process.env.GITHUB_CLIENT_URL, 'http://localhost:3000'],
+  origin: corsOrigins,
 }));
-app.use(bodyParser.json())
+app.use(express.json())
 app.use(
-  bodyParser.urlencoded({
+  express.urlencoded({
     extended: true,
   })
 )
