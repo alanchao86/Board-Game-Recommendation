@@ -23,6 +23,10 @@ This is a board game recommend application built using the PERN stack (PostgreSQ
 - Schema design document: `docs/DB_SCHEMA.md`
 - Rule: any schema change must update both Sequelize migration(s) and `docs/DB_SCHEMA.md` in the same PR.
 
+## Security
+
+- Security guidance and secret-handling rules: `SECURITY.md`
+
 ## Run with Docker Compose
 
 1. Start the full stack:
@@ -38,7 +42,8 @@ This is a board game recommend application built using the PERN stack (PostgreSQ
 ### pgAdmin Login (UI account)
 
 - Email: `admin@example.com`
-- Password: `admin1234`
+- Password: `admin-change-me`
+- Note: these are local-development defaults only. Override before any shared environment.
 
 You can override both values using environment variables before starting:
 - `PGADMIN_DEFAULT_EMAIL`

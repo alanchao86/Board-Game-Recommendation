@@ -1,9 +1,9 @@
 const express = require('express');
 const pool = require('./db');
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'cutecat';
-if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
-    throw new Error('JWT_SECRET must be set in production environment.');
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET must be set.');
 }
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');

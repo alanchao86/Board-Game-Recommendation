@@ -85,7 +85,7 @@ Use Caddy on host (Let's Encrypt auto-managed):
 
 1. Set a domain that resolves to EC2 public IP.
 2. For quick testing, you can use `sslip.io`:
-   - Example domain for IP `3.14.178.12`: `3.14.178.12.sslip.io`
+   - Example domain: `<EC2_PUBLIC_IP>.sslip.io`
 3. Copy `infra/caddy/Caddyfile` to `/etc/caddy/Caddyfile`.
 4. Export domain variable and render Caddyfile:
    - `export CADDY_DOMAIN=your-domain.example`
