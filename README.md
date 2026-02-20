@@ -1,7 +1,6 @@
 # Board Game Recommendation App
 
 Live Demo: https://3.14.178.12.sslip.io/
-Note: the demo instance may be temporarily offline when EC2 is stopped for cost control.
 
 This project is a board game recommendation web application built with the PERN stack (PostgreSQL, Express.js, React.js, Node.js) and Material-UI (MUI). It includes JWT-based authentication, hybrid recommendations (content-based + collaborative filtering), and user profile management.
 
